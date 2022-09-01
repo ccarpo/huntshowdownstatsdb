@@ -13,6 +13,7 @@ import traceback
 
 PATH_TO_XML = "D:/Temp/HuntShowdownStats/"
 PATH_TO_ARCHIVE = "D:/Temp/HuntShowdownStats/archive"
+MMR = {"MMR1": 2000, "MMR2": 2300, "MMR3": 2600, "MMR4": 2750, "MMR5": 3000, "MMR6": 5000}
 
 PLAYER_NAME = "CCarpo"
 
@@ -116,6 +117,7 @@ def start_ingestion():
                         or child.attrib['name'] == "MissionBagNumTeams":
                         bag_var[child.attrib['name']] = child.attrib['value']
                 player_dict = generate_player_dict(players, bag_var, teams)
+                mmr_kill_count_dict = get_player_kill_count(player_dict)
                 # print(f'No Accolade Entries: {len(accolades)}')
                 # print(f'No Boss Entries:     {len(boss)}')
                 # print(f'No Team Entries:     {len(teams)}')
@@ -220,12 +222,12 @@ def start_ingestion():
                         has_player_wellspring_activated(players, bag_var),
                         get_player_downed_count(player_dict),
                         get_player_kill_count_total(player_dict),
-                        result.Player_Kill_Count_Mmr1,
-                        result.Player_Kill_Count_Mmr2,
-                        result.Player_Kill_Count_Mmr3,
-                        result.Player_Kill_Count_Mmr4,
-                        result.Player_Kill_Count_Mmr5,
-                        result.Player_Kill_Count_Mmr6,
+                        mmr_kill_count_dict["MMR1"],
+                        mmr_kill_count_dict["MMR2"],
+                        mmr_kill_count_dict["MMR3"],
+                        mmr_kill_count_dict["MMR4"],
+                        mmr_kill_count_dict["MMR5"],
+                        mmr_kill_count_dict["MMR6"],
                         result.Player_Kill_Assists,
                         result.Player_Assassin_Clues,
                         result.Player_Butcher_Clues,
@@ -258,7 +260,7 @@ def start_ingestion():
                 else:
                     print("Hash found in Database. Do nothing")
 # move/delete file
-                os.rename(full_file, os.path.join(PATH_TO_XML, "archive", file))
+                #os.rename(full_file, os.path.join(PATH_TO_XML, "archive", file))
                 print(f"File {file} moved to archive")
     except sqlite3.Error as error:
         traceback.print_exc()
@@ -567,6 +569,20 @@ def parse(bag_entries, result, bag_var):
                 if item[1] == "successful extraction" and bag_var["MissionBagIsHunterDead"] != "true":
                     result.Player_Is_Extracted = 1
     return result
+
+def get_player_kill_count(player_dict):
+    mmr_kill_count = { "MMR1": 0, "MMR2": 0, "MMR3": 0, "MMR4": 0, "MMR5": 0, "MMR6": 0}
+
+    for player in player_dict:
+        if player_dict[player].blood_line_name != PLAYER_NAME:
+            for i in range(1,6):
+                if int(player_dict[player].mmr) > MMR[f"MMR{i}"]:
+                    continue
+                else:
+                    mmr_kill_count[f"MMR{i}"] += int(player_dict[player].downedbyme)
+                    mmr_kill_count[f"MMR{i}"] += int(player_dict[player].killedbyme)
+                    break
+    return mmr_kill_count
 
 def findOwnTeamNo(teams):
     for entry in teams:
