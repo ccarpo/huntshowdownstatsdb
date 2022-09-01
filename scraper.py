@@ -20,7 +20,7 @@ PLAYER_NAME = "CCarpo"
 def start_ingestion():
 # connect to database
     try:
-        con = sqlite3.connect('hunttracker.db')
+        con = sqlite3.connect('huntstats.db')
         cursor = con.cursor()
 
         # variables_table = """ CREATE TABLE if not exists Variables (
@@ -260,7 +260,7 @@ def start_ingestion():
                 else:
                     print("Hash found in Database. Do nothing")
 # move/delete file
-                #os.rename(full_file, os.path.join(PATH_TO_XML, "archive", file))
+                os.rename(full_file, os.path.join(PATH_TO_XML, "archive", file))
                 print(f"File {file} moved to archive")
     except sqlite3.Error as error:
         traceback.print_exc()
