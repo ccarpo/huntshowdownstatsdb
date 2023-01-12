@@ -20,7 +20,7 @@ PLAYER_NAME = "CCarpo"
 def start_ingestion():
 # connect to database
     try:
-        con = sqlite3.connect('huntstats.db')
+        con = sqlite3.connect('E:\\Seafile\\Games\\HuntShowdown\\huntstats_with_players.db')
         cursor = con.cursor()
 
         # variables_table = """ CREATE TABLE if not exists Variables (
@@ -79,8 +79,35 @@ def start_ingestion():
             Player_Banish_Scrapbeak BOOLEAN
         ); """
 
-        # cursor.execute(variables_table)
+        players_table =  """ CREATE TABLE if not exists Players (
+            AccoladeHash VARCHAR(256) NOT NULL,
+            teamnumber INTEGER NOT NULL,
+            blood_line_name VARCHAR(256) NOT NULL,
+            bountyextracted INTEGER NOT NULL,
+            bountypickedup INTEGER NOT NULL,
+            downedbyme INTEGER NOT NULL,
+            downedbyteammate INTEGER NOT NULL,
+            downedme INTEGER NOT NULL,
+            downedteammate INTEGER NOT NULL,
+            hadWellspring INTEGER NOT NULL,
+            hadbounty INTEGER NOT NULL,
+            ispartner INTEGER NOT NULL,
+            issoulsurvivor INTEGER NOT NULL,
+            killedbyme INTEGER NOT NULL,
+            killedbyteammate INTEGER NOT NULL,
+            killedme INTEGER NOT NULL,
+            killedteammate INTEGER NOT NULL,
+            mmr INTEGER NOT NULL,
+            profileid VARCHAR(256) NOT NULL,
+            proximity INTEGER NOT NULL,
+            proximitytome INTEGER NOT NULL,
+            proximitytoteammate INTEGER NOT NULL,
+            skillbased INTEGER NOT NULL,
+            teamextraction INTEGER NOT NULL
+            ); """
+
         cursor.execute(all_matches_table)
+        cursor.execute(players_table)
         con.commit()
 
 # read files
@@ -98,6 +125,7 @@ def start_ingestion():
                 boss = {}
                 bag_entries = {}
                 bag_var = {}
+                mmr_kill_count_dict = {}
                 
                 for child in root:
                     if child.attrib['name'].startswith("MissionAccoladeEntry"):
@@ -126,7 +154,7 @@ def start_ingestion():
                 # print(f'No Var Entries:      {len(bag_entries)}')
 
 # check if the file contains new accolades so this would be a new match and not just some other changes in the attributes.xml
-                same_match = True
+                #same_match = True
                 select_all_hashes = """ SELECT AccoladeHash FROM Matches;"""
                 cursor.execute(select_all_hashes)
                 accolade_hashes = cursor.fetchall()
@@ -150,54 +178,14 @@ def start_ingestion():
                     print("Insert new match")
                     insert_match = """
                         INSERT INTO Matches VALUES (
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?, 
-                            ?, 
-                            ?, 
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?,
-                            ?
+                            ?, ?, ?, ?, ?, ?, 
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?
                         );
                         """
                     cursor.execute(insert_match, (
@@ -252,11 +240,45 @@ def start_ingestion():
                         ))
                     con.commit()
                        
-# replace last match
-                    # cursor.execute("INSERT INTO Variables('Key','Value') VALUES ('LastAccoladeHash', ?) ON CONFLICT(Key) DO UPDATE SET Value=excluded.Value;", (current_accolade_hash,))
-                    # con.commit()
-                    # else:
-                    #     print("Timstamp exists in DB. Probably old file.")
+# Insert players 
+                    print("Insert players")
+                    for player_name in player_dict:
+                        insert_player = """
+                            INSERT INTO Players VALUES (
+                                ?, ?, ?, ?, ?, ?,
+                                ?, ?, ?, ?, ?, ?,
+                                ?, ?, ?, ?, ?, ?,
+                                ?, ?, ?, ?, ?, ?
+                            );
+                        """
+                        player = player_dict[player_name]
+                        cursor.execute(insert_player, (
+                            current_accolade_hash,
+                            player.teamnumber,
+                            player.blood_line_name,
+                            player.bountyextracted,
+                            player.bountypickedup,
+                            player.downedbyme,
+                            player.downedbyteammate,
+                            player.downedme,
+                            player.downedteammate,
+                            player.hadWellspring,
+                            player.hadbounty,
+                            player.ispartner,
+                            player.issoulsurvivor,
+                            player.killedbyme,
+                            player.killedbyteammate,
+                            player.killedme,
+                            player.killedteammate,
+                            player.mmr,
+                            player.profileid,
+                            player.proximity,
+                            player.proximitytome,
+                            player.proximitytoteammate,
+                            player.skillbased,
+                            player.teamextraction
+                            ))
+                        con.commit()
                 else:
                     print("Hash found in Database. Do nothing")
 # move/delete file
@@ -344,6 +366,7 @@ def generate_player_dict(players, bag_var, teams):
             if int(playernumber) < int(teams[f"MissionBagTeam_{teamnumber}_numplayers"]):
                 print(f"New player found: {players[item]}")
                 player = Player(players[f'MissionBagPlayer_{teamnumber}_{playernumber}_profileid'],players[item])
+                player.teamnumber = teamnumber
                 try:
                     player.bountyextracted = players[f'MissionBagPlayer_{teamnumber}_{playernumber}_bountyextracted']
                 except KeyError:
