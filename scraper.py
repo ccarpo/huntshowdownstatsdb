@@ -103,7 +103,7 @@ def start_ingestion():
             proximitytome INTEGER NOT NULL,
             proximitytoteammate INTEGER NOT NULL,
             skillbased INTEGER NOT NULL,
-            teamextraction INTEGER NOT NULL,
+            teamextraction INTEGER NOT NULL
             ); """
 
         cursor.execute(all_matches_table)
@@ -125,6 +125,7 @@ def start_ingestion():
                 boss = {}
                 bag_entries = {}
                 bag_var = {}
+                mmr_kill_count_dict = {}
                 
                 for child in root:
                     if child.attrib['name'].startswith("MissionAccoladeEntry"):
@@ -153,7 +154,7 @@ def start_ingestion():
                 # print(f'No Var Entries:      {len(bag_entries)}')
 
 # check if the file contains new accolades so this would be a new match and not just some other changes in the attributes.xml
-                same_match = True
+                #same_match = True
                 select_all_hashes = """ SELECT AccoladeHash FROM Matches;"""
                 cursor.execute(select_all_hashes)
                 accolade_hashes = cursor.fetchall()
@@ -241,7 +242,7 @@ def start_ingestion():
                        
 # Insert players 
                     print("Insert players")
-                    for player in player_dict:
+                    for player_name in player_dict:
                         insert_player = """
                             INSERT INTO Players VALUES (
                                 ?, ?, ?, ?, ?, ?,
@@ -250,6 +251,7 @@ def start_ingestion():
                                 ?, ?, ?, ?, ?, ?
                             );
                         """
+                        player = player_dict[player_name]
                         cursor.execute(insert_player, (
                             current_accolade_hash,
                             player.teamnumber,
