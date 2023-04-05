@@ -11,8 +11,8 @@ from result import Result
 from player import Player
 import traceback
 
-PATH_TO_XML = "D:/Temp/HuntShowdownStats/"
-PATH_TO_ARCHIVE = "D:/Temp/HuntShowdownStats/archive"
+PATH_TO_XML = "F:/Temp/HuntShowdownStats/"
+PATH_TO_ARCHIVE = "F:/Temp/HuntShowdownStats/archive"
 MMR = {"MMR1": 2000, "MMR2": 2300, "MMR3": 2600, "MMR4": 2750, "MMR5": 3000, "MMR6": 5000}
 
 PLAYER_NAME = "CCarpo"
